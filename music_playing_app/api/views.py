@@ -54,3 +54,26 @@ class CreateRoomView(APIView):
 
             # if neither a room is create nor a updated, send a message for bad request
             return Response(RoomSerializer(room).data, status=status.HTTP_400_BAD_REQUEST)
+
+class GetRoom(APIView):
+    serializer_class = RoomSerializer
+    
+    def get(self, request, format=None):
+        # get the room code 
+        code = self.request.GET.get('code')
+        # check if the room has a code associated
+        if code != None:
+            # get the room with the code associaed
+            room = Room.objects.filter(code=code)[0]
+            if room != None:
+                # serialize the room 
+                data = self.serializer_class(room).data
+                # check if the current user is the host
+                data['is_host'] = self.request.session.session_key == room.host
+
+                # send the data if there is a room
+                return Response(data, status=status.HTTP_200_OK)
+            # no room found
+            return Response({'Room Not Found': 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
+        # no code passed
+        return Response({'Bad Request': 'No Code Passed'}, status=status.HTTP_400_BAD_REQUEST)

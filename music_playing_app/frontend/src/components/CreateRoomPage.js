@@ -20,31 +20,34 @@ export default class CreateRoomPage extends Component {
             votesToSkip: this.defaultVotes,
             valid: false
         };
-
-        // bind the event to get access to the this key word within the class
-        // this.handleCreateRoomClicked = this.handleCreateRoomClicked.bind(this)
     }
 
-    handleVotesChange = e => {
+    // create an async function to check votes validity after set state
+    handleVotesChange = async(e) => {
         // change the state when the votes are changed
-        this.setState({votesToSkip: e.target.value});
+        await this.setState({votesToSkip: e.target.value});
         
         // check if the current form is valid
-        checkValid();
+        this.checkValid();
     }
 
-    handleGuestsPauseChange = e => {
+    // create an async function to check guests validity after set state
+    handleGuestsPauseChange = async(e) => {
         // change the state when the guest pauses
-        this.setState({guestCanPause: e.target.value === 'true' ? true: false})
+        await this.setState({guestCanPause: e.target.value === 'true' ? true: false})
 
         // log to console to check
-        checkValid();
+        this.checkValid();
     }
 
     checkValid = () => {
         // check if the current form is valid
-        if (this.state.votesToSkip !== "" && this.state.guestCanPause !== null) {
+        if (this.state.votesToSkip != "" && this.state.guestCanPause !== null) {
             this.setState({valid: true});
+        }
+        // form is not valid
+        else {
+            this.setState({valid: false});
         }
     }
 
@@ -80,7 +83,7 @@ export default class CreateRoomPage extends Component {
                 <FormControl component="fieldset">
                     <FormHelperText>
                         <div>
-                            Guest Controls of Playback State
+                            Guest Controls of Playback State (Required)
                         </div>
                     </FormHelperText>
                     <RadioGroup row onChange={this.handleGuestsPauseChange}>
@@ -115,13 +118,19 @@ export default class CreateRoomPage extends Component {
                     />
                     <FormHelperText>
                         <div>
-                            Votes Required To Skip Song
+                            Votes Required To Skip Song (Required)
                         </div>
                     </FormHelperText>
                 </FormControl>
             </Grid>
             <Grid item xs={12}>
-                <Button color="primary" variant="contained" onClick={this.handleCreateRoomClicked}>Create A Room</Button>
+                <Button 
+                    color="primary" 
+                    variant="contained" 
+                    disabled={!this.state.valid}
+                    onClick={this.handleCreateRoomClicked}>
+                        Create A Room
+                </Button>
             </Grid>
             <Grid item xs={12}>
                 <Button color="secondary" variant="contained" to='/' component={Link}>Back</Button>
