@@ -22,11 +22,13 @@ class CreateRoomView(APIView):
         if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
         
+        print(type(request.data))
         # get the unserialized data from the request and turn it into serialized, usable data
-        serializer = CreateRoomView.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data)
 
         # check if the parameters of CreateRoomSerializer are valid
         if serializer.is_valid():
+            print(type(serializer.data))
             # get the data from the serializer
             guest_can_pause = serializer.data.get('guest_can_pause')
             votes_to_skip = serializer.data.get('votes_to_skip')
@@ -43,12 +45,17 @@ class CreateRoomView(APIView):
                 # save the updated room model
                 room.save(update_fields=['guest_can_pause', 'votes_to_skip'])
 
+                # add the room code to the current user's session
+                self.request.session['room_code'] = room.code
+
                 # return a response showing that the post request is ok 
                 return Response(RoomSerializer(room).data, status = status.HTTP_200_OK)
             else:
                 # create a new room if the host key DNE
                 room = Room(host = host, guest_can_pause = guest_can_pause, votes_to_skip = votes_to_skip)
                 room.save()
+                # add the room code to the current user's session
+                self.request.session['room_code'] = room.code
                 # return a response to show the creation 
                 return Response(RoomSerializer(room).data, status = status.HTTP_201_CREATED)
 
@@ -64,8 +71,10 @@ class GetRoom(APIView):
         # check if the room has a code associated
         if code != None:
             # get the room with the code associaed
-            room = Room.objects.filter(code=code)[0]
-            if room != None:
+            room = Room.objects.filter(code=code)
+            if room != None and len(room) >= 1:
+                # get the room element at index 0
+                room = room[0]
                 # serialize the room 
                 data = self.serializer_class(room).data
                 # check if the current user is the host
@@ -77,3 +86,26 @@ class GetRoom(APIView):
             return Response({'Room Not Found': 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
         # no code passed
         return Response({'Bad Request': 'No Code Passed'}, status=status.HTTP_400_BAD_REQUEST)
+
+class JoinRoom(APIView):
+    def post(self, request, format=None):
+        # make sure the current user has a session
+        if not self.request.session.exists(self.request.session.session_key):
+            self.request.session.create()
+        
+        # get the code from the post request
+        print(request.data)
+        code = request.data.get('code')
+
+        if code != None:
+            # find a room that matches the code
+            room_search = Room.objects.filter(code=code)
+            if len(room_search) > 0:
+                room = room_search[0]
+                # add the room code to the current user's session
+                self.request.session['room_code'] = code
+                return Response({'Message': 'Room Joined'}, status=status.HTTP_200_OK)
+            
+            return Response({'Room not found': 'Invalid, code not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({'Bad Request': 'Invalid room request made'}, status=status.HTTP_400_BAD_REQUEST)
