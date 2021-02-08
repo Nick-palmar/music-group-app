@@ -12,3 +12,11 @@ class CreateRoomSerializer(serializers.ModelSerializer):
         # serializer that is created when the post request for create room is sent
         model = Room
         fields = ('guest_can_pause', 'votes_to_skip')
+
+class UpdateRoomSerializer(serializers.ModelSerializer):
+    # make an explicit code serializer charfield so that the unique key does not mess up the model
+    code = serializers.CharField()
+
+    class Meta:
+        model = Room
+        fields = ('guest_can_pause', 'votes_to_skip', 'code')

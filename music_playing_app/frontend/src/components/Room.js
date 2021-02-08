@@ -41,7 +41,10 @@ export default class Room extends Component {
 
     leaveButtonClicked = () => {
         // get the endpoint to leave a room and return to the home page
-        fetch('/api/leave-room')
+        const requestOptions = {
+            method: 'POST'
+        };
+        fetch('/api/leave-room', requestOptions)
             .then(() => {
                 // return to home page and remove the previous room code
                 this.props.leaveRoomParent();

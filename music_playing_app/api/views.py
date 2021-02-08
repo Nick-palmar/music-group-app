@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import generics, status
-from .serializers import RoomSerializer, CreateRoomSerializer
+from .serializers import RoomSerializer, CreateRoomSerializer, UpdateRoomSerializer
 from .models import Room
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -127,7 +127,7 @@ class CurrentRoom(APIView):
             return JsonResponse({'Not in session': 'Leave person at home page'}, status=status.HTTP_404_NOT_FOUND)
 
 class LeaveRoom(APIView):
-    def get(self, request, format=None):
+    def post(self, request, format=None):
         # delete the person's current room code from the session
         try:
             del self.request.session['room_code']
@@ -143,3 +143,46 @@ class LeaveRoom(APIView):
             # the room code was not found in the current session_key
             print("Exception")
             return Response({"Session not found": "Not currently in a room"}, status=status.HTTP_404_NOT_FOUND)
+
+class ChangeSettings(APIView):
+    def patch(self, request, format=None):
+        # serialize the posts and vote status as well as code coming in
+        serialized_data = UpdateRoomSerializer(data=request.data)
+        # check if the serializer is valid
+        if serialized_data.is_valid():
+            # find a room with the corresponding code
+            code = serialized_data.data.get('code')
+            potential_room = Room.objects.filter(code=code)
+
+            if potential_room.exists():
+                room = potential_room[0]
+                # check if the current user is authorized to update room settings
+                if room.host == self.request.session.session_key:
+                    room.guest_can_pause = serialized_data.data.get('guest_can_pause')
+                    room.votes_to_skip = serialized_data.data.get('votes_to_skip')
+                    room.save(update_fields=['guest_can_pause', 'votes_to_skip'])
+                    # the correct fields have been updated in the backend, send a corresponding message and update the fields from the frontend
+                    return Response({"Approved": "Settings have been updated"}, status=status.HTTP_200_OK)
+                # person does not have the correct permission
+                return Response({"Denied Access": "Incorrect permissions"}, status=status.HTTP_403_FORBIDDEN)
+            # the room DNE, return this
+            return Response({"Room not found": "The room with this code was not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # serialzied data was not valid; invalid data
+        return Response({'Bad Request': 'Invalid data passed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # person_id = self.request.session.session_key
+        # potential_room = Room.objects.filter(host=person_id)
+
+        # if potential_room.exists():
+        #     # get the room if it exists and change the fields
+        #     room = potential_room[0]
+        #     room.guest_can_pause = serialized_data.get('guest_can_pause')
+        #     room.votes_to_skip = serialized_data.get('votes_to_skip')
+        #     room.save(update_fields=['guest_can_pause', 'votes_to_skip'])
+
+        #     # the correct fields have been updated in the backend, send a corresponding message and update the fields from the frontend
+        #     return Response({"Approved": "Settings have been updated"}, status=status.HTTP_200_OK)
+        
+        # # either the room does not exist or the person isn't the host
+        # return Response({"Room not found": "The current user does not own a room"}, status=status.HTTP_404_NOT_FOUND)
