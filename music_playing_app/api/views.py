@@ -117,7 +117,29 @@ class CurrentRoom(APIView):
         # make sure the current user has a session
         if not self.request.session.exists(self.request.session.session_key):
             self.request.session.create()
-            return JsonResponse({'Not in session': 'Send to room join page'}, status=status.HTTP_404_NOT_FOUND)
+            return JsonResponse({'Not in session': 'Leave person at home page'}, status=status.HTTP_404_NOT_FOUND)
         
+        # check if the user has a session but is not in a room 
         code = self.request.session.get('room_code')
-        return JsonResponse({"code": code}, status=status.HTTP_202_ACCEPTED)
+        if code != None:
+            return JsonResponse({"code": code}, status=status.HTTP_202_ACCEPTED)
+        else:
+            return JsonResponse({'Not in session': 'Leave person at home page'}, status=status.HTTP_404_NOT_FOUND)
+
+class LeaveRoom(APIView):
+    def get(self, request, format=None):
+        # delete the person's current room code from the session
+        try:
+            del self.request.session['room_code']
+            # check if the person is the room host, if they are delete the room 
+            person_id = self.request.session.session_key
+            find_rooms = Room.objects.filter(host=person_id)
+            if find_rooms.exists():
+                room = find_rooms[0]
+                room.delete()
+            print("No exception")
+            return Response({"Room left": "Room has been left sucessfully"}, status=status.HTTP_200_OK)
+        except:
+            # the room code was not found in the current session_key
+            print("Exception")
+            return Response({"Session not found": "Not currently in a room"}, status=status.HTTP_404_NOT_FOUND)

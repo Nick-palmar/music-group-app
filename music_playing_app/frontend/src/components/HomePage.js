@@ -29,6 +29,12 @@ export default class HomePage extends Component {
             });
     }
 
+    clearCode = () => {
+        // reset the room code
+        this.setState({code: null});
+        console.log(this.state.code);
+    }
+
 
 
     renderHomePage() {
@@ -56,7 +62,9 @@ export default class HomePage extends Component {
                 }}/>
                 <Route path = '/join' component={RoomJoinPage}></Route>
                 <Route path = '/create' component={CreateRoomPage}></Route>
-                <Route path = '/room/:roomCode' component={Room}></Route>
+                <Route path = '/room/:roomCode' render={props => { 
+                    return <Room {...props} leaveRoomParent={this.clearCode} />
+                }}/>
             </Switch>
         </Router>
     );

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import Typography from "@material-ui/core/Typography";
+import { Grid, Button, Typography } from "@material-ui/core";
 
 export default class Room extends Component {
     constructor(props) {
@@ -23,7 +23,13 @@ export default class Room extends Component {
 
         // send a fetch get request to the endpoints for information on the room and set the information in the state
         fetch(reqUrl)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    // in a room that DNE, go back to home page
+                    this.props.leaveRoomParent();
+                    this.props.history.push('/')
+                }
+                return response.json()})
             .then(json => {
                 this.setState({
                     votesToSkip: json.votes_to_skip,
@@ -31,15 +37,42 @@ export default class Room extends Component {
                     isHost: json.is_host
                 })
             })
-        }
+    }
+
+    leaveButtonClicked = () => {
+        // get the endpoint to leave a room and return to the home page
+        fetch('/api/leave-room')
+            .then(() => {
+                // return to home page and remove the previous room code
+                this.props.leaveRoomParent();
+                this.props.history.push(`/`);
+            })
+    }
 
 
     render() {
         return <>
-            <Typography variant="h3">{'Code: ' + this.code}</Typography>
-            <Typography variant="h6">{'Votes to skip: ' + this.state.votesToSkip}</Typography>
-            <Typography variant="h6">{'Guest can pause: ' + this.state.guestCanPause}</Typography>
-            <Typography variant="h6">{'Host: ' + this.state.isHost}</Typography>
+            <Grid container spacing={1} align="center">
+                <Grid item xs={12}>
+                    <Typography variant="h3">{'Code: ' + this.code}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                    <Typography variant="h6">{'Votes to skip: ' + this.state.votesToSkip}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                    <Typography variant="h6">{'Guest can pause: ' + this.state.guestCanPause}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                    <Typography variant="h6">{'Host: ' + this.state.isHost}</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                    <Button variant="contained" color="secondary" onClick={this.leaveButtonClicked}>Leave</Button>
+                </Grid>
+            </Grid>
         </>
     }
 }
+{/* <Typography variant="h3">{'Code: ' + this.code}</Typography>
+            <Typography variant="h6">{'Votes to skip: ' + this.state.votesToSkip}</Typography>
+            <Typography variant="h6">{'Guest can pause: ' + this.state.guestCanPause}</Typography>
+            <Typography variant="h6">{'Host: ' + this.state.isHost}</Typography> */}
