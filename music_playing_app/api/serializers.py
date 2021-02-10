@@ -15,7 +15,7 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 
 class UpdateRoomSerializer(serializers.ModelSerializer):
     # make an explicit code serializer charfield so that the unique key does not mess up the model
-    code = serializers.CharField()
+    code = serializers.CharField(validators=[])
 
     class Meta:
         model = Room

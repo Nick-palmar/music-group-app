@@ -15,12 +15,21 @@ export default class CreateRoomPage extends Component {
     defaultVotes = 2;
     constructor(props) {
         super(props);
-        // create state variables for the input fields in create room 
-        this.state = {
-            guestCanPause: null,
-            votesToSkip: this.defaultVotes,
-            valid: false
-        };
+        // create state variables for the input fields in create room depending on if update mode or not
+        if (!this.props.update) {
+            this.state = {
+                guestCanPause: null,
+                votesToSkip: this.defaultVotes,
+                valid: false
+            };
+        }
+        else {
+            this.state = {
+                guestCanPause: this.props.guestCanPause,
+                votesToSkip: this.props.votesToSkip,
+                valid: true
+            };
+        }
     }
 
     // create an async function to check votes validity after set state
@@ -88,7 +97,11 @@ export default class CreateRoomPage extends Component {
                             Guest Controls of Playback State (Required)
                         </div>
                     </FormHelperText>
-                    <RadioGroup row onChange={this.handleGuestsPauseChange}>
+                    <RadioGroup 
+                        row 
+                        onChange={this.handleGuestsPauseChange} 
+                        defaultValue={this.state.guestCanPause === null ? null: this.state.guestCanPause.toString()}
+                    >
                         <FormControlLabel 
                             value="true" 
                             control={<Radio color="primary" />} 

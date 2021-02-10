@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Grid, Button, Typography } from "@material-ui/core";
+import CreateRoomPage from "./CreateRoomPage";
 
 export default class Room extends Component {
     constructor(props) {
@@ -8,7 +9,8 @@ export default class Room extends Component {
         this.state = {
             votesToSkip: null,
             guestCanPause: null,
-            isHost: null
+            isHost: null,
+            showSettings: false
         }
         // by default react passes the match which gives you how you accessd the url; from there params can be taken
         this.code = this.props.match.params.roomCode;
@@ -52,8 +54,43 @@ export default class Room extends Component {
             })
     }
 
+    settingsButton = () => {
+        return (
+            <Grid item xs={12}>
+                <Button variant="contained" color="primary" onClick={() => this.setState({showSettings: true})}>
+                    Settings
+                </Button>
+            </Grid>
+        );
+
+    }
+
+    renderSettings = () => {
+        return (
+            <Grid container spacing={1} align="center">
+                <Grid item xs={12}>
+                    <CreateRoomPage 
+                        update={true} 
+                        votesToSkip={this.state.votesToSkip} 
+                        guestCanPause={this.state.guestCanPause} 
+                        roomCode={this.code}
+                        updateCallback={() => {}}
+                        />
+                </Grid>
+                <Grid item xs={12}>
+                    <Button variant="contained" color="secondary" onClick={() => this.setState({showSettings: false})}>
+                        Close
+                    </Button>
+                </Grid>
+            </Grid>
+        );
+    }
 
     render() {
+        // check if the person is in settings mode or room mode
+        if (this.state.showSettings) {
+            return this.renderSettings();
+        }
         return <>
             <Grid container spacing={1} align="center">
                 <Grid item xs={12}>
@@ -71,6 +108,7 @@ export default class Room extends Component {
                 <Grid item xs={12}>
                     <Button variant="contained" color="secondary" onClick={this.leaveButtonClicked}>Leave</Button>
                 </Grid>
+                {this.state.isHost ? this.settingsButton(): null}
             </Grid>
         </>
     }
