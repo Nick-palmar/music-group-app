@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { Button, Grid, Typography, TextField, FormHelperText, FormControl, Radio, RadioGroup, FormControlLabel } from "@material-ui/core"
+import { Button, Grid, Typography, TextField, FormHelperText, FormControl, Radio, RadioGroup, FormControlLabel, Collapse } from "@material-ui/core"
 import { Link } from "react-router-dom"
+import { Alert } from '@material-ui/lab'
 // import Button from "@material-ui/core/Button";
 // import Grid from "@material-ui/core/Grid";
 // import Typography from "@material-ui/core/Typography";
@@ -20,14 +21,20 @@ export default class CreateRoomPage extends Component {
             this.state = {
                 guestCanPause: null,
                 votesToSkip: this.defaultVotes,
-                valid: false
+                valid: false,
+                title: 'Create a Room',
+                errorMsg: "",
+                successMsg: ""
             };
         }
         else {
             this.state = {
                 guestCanPause: this.props.guestCanPause,
                 votesToSkip: this.props.votesToSkip,
-                valid: true
+                valid: true,
+                title: 'Update Room',
+                errorMsg: "",
+                successMsg: ""
             };
         }
     }
@@ -83,11 +90,86 @@ export default class CreateRoomPage extends Component {
         
     }
 
+    renderCreateButtons = () => {
+        // show these buttons on create a room 
+        return (
+            <Grid container spacing={1} align="center">
+                <Grid item xs={12}>
+                    <Button 
+                        color="primary" 
+                        variant="contained" 
+                        disabled={!this.state.valid}
+                        onClick={this.handleCreateRoomClicked}>
+                            Create A Room
+                    </Button>
+                </Grid>
+                <Grid item xs={12}>
+                    <Button color="secondary" variant="contained" to='/' component={Link}>Return home</Button>
+                </Grid>
+            </Grid>
+            );
+    }
+
+    renderUpdateButtons = () => {
+        // show this button on update room 
+        return (
+            <Grid item xs={12}>
+                    <Button 
+                        color="primary" 
+                        variant="contained" 
+                        disabled={!this.state.valid}
+                        onClick={this.handleUpdateRoomClicked}>
+                            Update Room
+                    </Button>
+            </Grid>
+        );
+    }
+
+    handleUpdateRoomClicked = () => {
+         // ensure that there is sufficent data to update a room
+         if (this.state.valid) {
+            // make the request object and ensure that they match the serializer in the endpoints
+            const requestOptions = {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    votes_to_skip: this.state.votesToSkip,
+                    guest_can_pause: this.state.guestCanPause, 
+                    code: this.props.roomCode
+                })
+            }
+    
+            // send a fetch request to the api endpoint and redirect to the correct room page
+            fetch('/api/change-settings', requestOptions)
+                .then(response => {
+                    if (response.ok) {
+                        this.setState({ successMsg : "Room updated successfully"})
+                    } 
+                })
+                .then(data => {
+                    if (this.state.successMsg !== "Room updated successfully") {
+                        this.setState({ errorMsg: data })
+                    }
+                    // refresh the info on the room page
+                    this.props.updateCallback();
+                });
+    
+            }
+    }
+
     render () {
         return <Grid container spacing={1} alignItems="center" direction="column"> 
             <Grid item xs={12}>
+                <Collapse in={this.state.errorMsg !== "" || this.state.successMsg !== ""} timeout={0}>
+                    {this.state.successMsg !== "" ? 
+                    (<Alert severity='success' onClose={() => this.setState({ successMsg: "" })}>{this.state.successMsg}</Alert>) 
+                    : 
+                    (<Alert severity='error' onClose={() => this.setState({ errorMsg: ""})}>{this.state.errorMsg}</Alert>)}
+                </Collapse>
+            </Grid>
+            <Grid item xs={12}>
                 <Typography variant='h4'>
-                    Create a Room
+                    {this.state.title}
                 </Typography>
             </Grid>
             <Grid item xs={12}>
@@ -138,7 +220,7 @@ export default class CreateRoomPage extends Component {
                     </FormHelperText>
                 </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            {/* <Grid item xs={12}>
                 <Button 
                     color="primary" 
                     variant="contained" 
@@ -149,7 +231,8 @@ export default class CreateRoomPage extends Component {
             </Grid>
             <Grid item xs={12}>
                 <Button color="secondary" variant="contained" to='/' component={Link}>Return home</Button>
-            </Grid>
+            </Grid> */}
+            {this.props.update? this.renderUpdateButtons() : this.renderCreateButtons()}
         </Grid>;
     }
 
